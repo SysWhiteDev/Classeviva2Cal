@@ -1,0 +1,15 @@
+{
+  "name": "classeviva2cal",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "ics": "^3.8.1"
+  }
+}
