@@ -1,5 +1,6 @@
 import { writeFileSync } from 'fs';
 import * as ics from "ics";
+import * as fs from "fs";
 
 const startingHeader = {
     "User-Agent": "CVVS/std/4.1.7 Android/n10",
@@ -9,7 +10,7 @@ const startingHeader = {
 
 const printBanner = () => {
     console.log("\r\n   _____    ___   _____      _ \r\n  \/ ____|  |__ \\ \/ ____|    | |\r\n | |  __   __ ) | |     __ _| |\r\n | |  \\ \\ \/ \/\/ \/| |    \/ _` | |\r\n | |___\\ V \/\/ \/_| |___| (_| | |\r\n  \\_____\\_\/|____|\\_____\\__,_|_|\r\n");
-    console.log("Connect the classeviva agenda to an actual calendar. 📆")
+    console.log("View the Classeviva agenda in an actual calendar app. 📆");
     console.log("Made by SysWhite, ⭐️ star the repo on Github if you like it!\n");
 }
 
@@ -67,6 +68,20 @@ const getAgendaItems = async (token: string, uid: string): Promise<ics.EventAttr
         homeworkId: string | null;
     }[];
     console.log("✅ Successfully fetched agenda items.");
+
+    const eventsRegistry = await readJsonRegistry();
+    agenda.map((event) => {
+        const alreadySeenEvent = eventsRegistry.events.find((e) => e.evtId == event.evtId);
+        if (!alreadySeenEvent) {
+            eventsRegistry.events = [...eventsRegistry.events, {
+                evtId: event.evtId,
+                firstSeenDate: new Date()
+            }];
+        }
+    });
+
+    writeJsonRegistry(eventsRegistry);
+
     return agenda
         .map((event) => {
             const start = new Date(event.evtDatetimeBegin);
@@ -74,10 +89,10 @@ const getAgendaItems = async (token: string, uid: string): Promise<ics.EventAttr
             return {
                 title: event.subjectDesc || event.authorName,
                 organizer: { name: event.authorName, email: `${event.authorName.toLocaleLowerCase().replace(/ /g, '.')}@syswhite.dev` },
-                description: event.notes,
+                description: `${event.notes}\n\n-----------------\nEvent first seen on Classeviva on ${new Date(eventsRegistry.events.find((e) => e.evtId == event.evtId)?.firstSeenDate || new Date()).toLocaleString("it-IT", { timeZone: "Europe/Rome" })}\n\nLast synced with Classeviva on ${new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" })}\n-----------------\n\nClasseviva2Cal Made with ❤️ by SysWhite.`,
                 busyStatus: "FREE" as "FREE" | "TENTATIVE" | "BUSY" | "OOF",
                 start: [start.getFullYear(), start.getMonth() + 1, start.getDate(), start.getHours(), start.getMinutes()] as [number, number, number, number, number],
-                duration: { minutes: Math.round((end.getTime() - start.getTime()) / 60000) }
+                duration: { minutes: Math.round((end.getTime() - start.getTime()) / 60000) },
             };
         });
 }
@@ -94,8 +109,51 @@ const updateAgendaCalendarFile = async () => {
     })
 }
 
-printBanner();
+const initializeJsonRegistry = async () => {
+    try {
+        await fs.promises.access('registry.json', fs.constants.F_OK);
+    } catch {
+        try {
+            await writeJsonRegistry({
+                "events": []
+            });
+            console.log("✅ Initialized json registry.");
+        } catch {
+            throw new Error("❌ Failed to initialize registry file.");
+        }
+    }
+}
 
+const readJsonRegistry = async (): Promise<{
+    "events": {
+        "evtId": number,
+        "firstSeenDate": Date
+    }[]
+}> => {
+    try {
+        const registryFile = await fs.promises.readFile('registry.json', 'utf-8');
+        const jsonData = JSON.parse(registryFile);
+        return jsonData;
+    } catch {
+        throw new Error("❌ Failed to read from registry file.")
+    }
+}
+
+const writeJsonRegistry = async (newRegistryData: {
+    "events": {
+        "evtId": number,
+        "firstSeenDate": Date
+    }[]
+}) => {
+    try {
+        await fs.promises.writeFile('registry.json', JSON.stringify(newRegistryData));
+    } catch {
+        throw new Error("❌ Failed to write to registry file.")
+    }
+}
+
+printBanner();
+initializeJsonRegistry();
 if (!process.env.CLASSEVIVA_PASSWORD || !process.env.CLASSEVIVA_USERNAME) {
     console.error("❌ Please set the CLASSEVIVA_PASSWORD and CLASSEVIVA_USERNAME environment variables.");
     process.exit(1);
@@ -104,6 +162,5 @@ if (!process.env.AGENDA_INTERVAL) {
     console.error("❌ Please set the AGENDA_INTERVAL environment variable.");
     process.exit(1);
 }
-
 updateAgendaCalendarFile();
 

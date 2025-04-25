@@ -1,5 +1,5 @@
 # Classeviva2Cal
-View the classeviva agenda in an actual calendar app. 📆
+View the Classeviva agenda in an actual calendar app. 📆
 
 ⭐ Star this on GitHub — it motivates me a lot!
 ## Index
@@ -8,7 +8,7 @@ View the classeviva agenda in an actual calendar app. 📆
 - [Usage](#usage)
 
 ## Prerequisites
-- [Bun](https://bun.sh) (v1.2.8+ reccomended)
+- [Bun](https://bun.sh) (v1.2.8+ recommended)
 - [Classeviva](https://www.classeviva.it/) account
 
 ## Features
@@ -16,7 +16,7 @@ View the classeviva agenda in an actual calendar app. 📆
 - [ ] Support for GitHub Actions.
 
 ## Usage
-1. Duplicate the `.env.example` file and rename it to `.env` so that your files look like the following.
+1. Duplicate the `.env.example` file and rename it to `.env` so that your files look like the following:
 ```
 Classeviva2Cal/
 ├── .env.example  
@@ -48,19 +48,22 @@ bun install
 ```bash
 bun run index.ts
 ```
-*NOTE: To keep the calendar up-to-date, you will need to run the script periodically, to do this you can set up a cron job to run the script periodically. For example, to run it every day at 8 AM.*
+*NOTE: To keep the calendar up-to-date, you will need to run the script periodically. To do this, you can set up a cron job to run the script periodically. For example, to run it every day at 8 AM.*
 
-5. Subscribe to the generated ics file in your preferred calendar app. 
+5. Subscribe to the generated `.ics` file in your preferred calendar app. 
 
-*NOTE: You need to make the file available on a web server, to do this i used nginx but you can use any web server you prefer.*
+*NOTE: You need to make the file available on a web server. To do this, I used Nginx, but you can use any web server you prefer.*
 
-If you set up everything correctly, your url should be something like this:
+If you set up everything correctly, your URL should be something like this:
 
 ```
 https://yourbeautifulserver.com/agenda.ics
 ```
+
+6. Profit! 🎉
 <br/>
 
 ---
 
 # Liked it? Star it! ⭐
+
