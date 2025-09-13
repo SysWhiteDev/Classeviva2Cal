@@ -3,7 +3,7 @@ import * as ics from "ics";
 import * as fs from "fs";
 
 const startingHeader = {
-    "User-Agent": "CVVS/std/4.1.7 Android/n10",
+    "User-Agent": "CVVS/std/4.2.3 Android/12",
     "Z-Dev-Apikey": "Tg1NWEwNGIgIC0K",
     "Content-Type": "application/json",
 }
@@ -31,12 +31,18 @@ const getUserAuth = async (): Promise<{ token: string, uid: string }> => {
     }
 }
 
-const getAgendaInterval = (): string[] => {
+const getAgendaInterval = async (token: string, uid: string): Promise<string[]> => {
     try {
-        return [new Date(), new Date()].map((d, i) => {
-            d.setMonth(d.getMonth() + (i ? Number(process.env.AGENDA_INTERVAL) : Number(process.env.AGENDA_INTERVAL) * -1));
-            return d.toISOString().slice(0, 10).replace(/-/g, '');
+        const response = await fetch(`https://web.spaggiari.eu/rest/v1/students/${uid}/periods`, {
+            headers: {
+                ...startingHeader,
+                "Z-Auth-Token": token
+            },
+            method: "GET"
         });
+        const responseData: any = (await response.json() as any).periods
+        const periodTimespans: string[] = [responseData[0]?.dateStart.slice(0.10).replace(/-/g, ''), responseData[responseData.length - 1]?.dateEnd.slice(0.10).replace(/-/g, '')];
+        return periodTimespans;
     } catch (error) {
         console.error("❌ Failed to get agenda interval:", error);
         return [new Date().toISOString().slice(0, 10).replace(/-/g, ''), new Date().toISOString().slice(0, 10).replace(/-/g, '')];
@@ -44,7 +50,8 @@ const getAgendaInterval = (): string[] => {
 }
 
 const getAgendaItems = async (token: string, uid: string): Promise<ics.EventAttributes[]> => {
-    const agendaRequest = await fetch(`https://web.spaggiari.eu/rest/v1/students/${uid}/agenda/all/${getAgendaInterval()[0]}/${getAgendaInterval()[1]}`, {
+    const agendaIntervals = await getAgendaInterval(token, uid);
+    const agendaRequest = await fetch(`https://web.spaggiari.eu/rest/v1/students/${uid}/agenda/all/${agendaIntervals[0]}/${agendaIntervals[1]}`, {
         headers: {
             ...startingHeader,
             "Z-Auth-Token": token
@@ -156,10 +163,6 @@ printBanner();
 initializeJsonRegistry();
 if (!process.env.CLASSEVIVA_PASSWORD || !process.env.CLASSEVIVA_USERNAME) {
     console.error("❌ Please set the CLASSEVIVA_PASSWORD and CLASSEVIVA_USERNAME environment variables.");
-    process.exit(1);
-}
-if (!process.env.AGENDA_INTERVAL) {
-    console.error("❌ Please set the AGENDA_INTERVAL environment variable.");
     process.exit(1);
 }
 updateAgendaCalendarFile();
