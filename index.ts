@@ -93,12 +93,13 @@ const getAgendaItems = async (token: string, uid: string): Promise<ics.EventAttr
         .map((event) => {
             const start = new Date(event.evtDatetimeBegin);
             const end = new Date(event.evtDatetimeEnd);
+            const isAllDay = start.getHours() == 0 && (end.getHours() == 23 && end.getMinutes() == 59 || end.getHours() == 0 && end.getMinutes() == 0)
             return {
                 title: event.subjectDesc || event.authorName,
                 organizer: { name: event.authorName, email: `${event.authorName.toLocaleLowerCase().replace(/ /g, '.')}@syswhite.dev` },
                 description: `${event.notes}\n\n-----------------\nEvent first seen on Classeviva on ${new Date(eventsRegistry.events.find((e) => e.evtId == event.evtId)?.firstSeenDate || new Date()).toLocaleString("it-IT", { timeZone: "Europe/Rome" })}\n\nLast synced with Classeviva on ${new Date().toLocaleString("it-IT", { timeZone: "Europe/Rome" })}\n-----------------\n\nClasseviva2Cal Made with ❤️ by SysWhite.`,
                 busyStatus: "FREE" as "FREE" | "TENTATIVE" | "BUSY" | "OOF",
-                start: [start.getFullYear(), start.getMonth() + 1, start.getDate(), start.getHours(), start.getMinutes()] as [number, number, number, number, number],
+                start: isAllDay ? [start.getFullYear(), start.getMonth() + 1, start.getDate()] as [number, number, number] : [start.getFullYear(), start.getMonth() + 1, start.getDate(), start.getHours(), start.getMinutes()] as [number, number, number, number, number],
                 duration: { minutes: Math.round((end.getTime() - start.getTime()) / 60000) },
             };
         });
@@ -112,7 +113,7 @@ const updateAgendaCalendarFile = async () => {
         } else {
             console.log("✅ Successfully updated calendar file.");
         }
-        writeFileSync(`${__dirname}/agenda.ics`, value)
+        writeFileSync(`${__dirname}/output/agenda.ics`, value)
     })
 }
 
